@@ -1,0 +1,37 @@
+# Системные файлы macOS / Windows / Linux
+.DS_Store
+Thumbs.db
+
+# IDE & редакторы
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+**/bin/
+**/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+.env
+.env.*
+!.env.example
+
+postgres_data/
+pgdata/
+redisdata/
+kafkadata/
+
+**/node_modules/
+**/.next/
+**/.nuxt/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
