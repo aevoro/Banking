@@ -13,9 +13,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
-	"banking/internal/repository/postgress"
+	"banking/internal/repository/postgres"
 	"banking/internal/service"
 	transportHttp "banking/internal/transport/http"
+	"banking/internal/worker"
 )
 
 func main() {
@@ -56,9 +57,16 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL successfully")
 
-	userRepo := postgress.NewUserRepository(dbPool)
+	userRepo := postgres.NewUserRepository(dbPool)
 	authService := service.NewAuthService(dbPool, userRepo)
 	authHandler := transportHttp.NewAuthHandler(authService)
+
+	exchangeRepo := postgres.NewExchangeRateRepository(dbPool)
+	exchangeService := service.NewExchangeService(exchangeRepo)
+	exchangeHandler := transportHttp.NewExchangeHandler(exchangeService)
+
+	ratesWorker := worker.NewRatesSyncWorker(exchangeRepo, 6*time.Hour)
+	ratesWorker.Start(context.Background())
 
 	mux := http.NewServeMux()
 
@@ -68,8 +76,12 @@ func main() {
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 
+	// Маршруты аутентификации
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
+
+	// Маршрут конвертера валют
+	mux.HandleFunc("/api/v1/exchange/convert", exchangeHandler.Convert)
 
 	srv := &http.Server{
 		Addr:         ":" + port,

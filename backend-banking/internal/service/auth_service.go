@@ -1,7 +1,6 @@
 package service
 
 import (
-	"banking/internal/repository/postgress"
 	"context"
 	"errors"
 	"fmt"
@@ -16,6 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"banking/internal/domain"
+	"banking/internal/repository/postgres"
 )
 
 var rbPhoneRegex = regexp.MustCompile(`^\+375(17|24|25|29|33|44)\d{7}$`)
@@ -31,10 +31,10 @@ type RegisterInput struct {
 
 type AuthServise struct {
 	db       *pgxpool.Pool
-	userRepo *postgress.UserRepository
+	userRepo *postgres.UserRepository
 }
 
-func NewAuthService(db *pgxpool.Pool, userRepo *postgress.UserRepository) *AuthServise {
+func NewAuthService(db *pgxpool.Pool, userRepo *postgres.UserRepository) *AuthServise {
 	return &AuthServise{
 		db:       db,
 		userRepo: userRepo,
