@@ -29,19 +29,19 @@ type RegisterInput struct {
 	Currencies []string `json:"currencies"`
 }
 
-type AuthServise struct {
+type AuthServiсe struct {
 	db       *pgxpool.Pool
 	userRepo *postgres.UserRepository
 }
 
-func NewAuthService(db *pgxpool.Pool, userRepo *postgres.UserRepository) *AuthServise {
-	return &AuthServise{
+func NewAuthService(db *pgxpool.Pool, userRepo *postgres.UserRepository) *AuthServiсe {
+	return &AuthServiсe{
 		db:       db,
 		userRepo: userRepo,
 	}
 }
 
-func (s *AuthServise) Register(ctx context.Context, input RegisterInput) (*domain.User, error) {
+func (s *AuthServiсe) Register(ctx context.Context, input RegisterInput) (*domain.User, error) {
 	phone := strings.ReplaceAll(input.Phone, " ", "")
 	phone = strings.ReplaceAll(phone, "-", "")
 	if !rbPhoneRegex.MatchString(phone) {
@@ -78,10 +78,14 @@ func (s *AuthServise) Register(ctx context.Context, input RegisterInput) (*domai
 	}
 
 	accountID := uuid.New()
+	accountNumber, err := domain.GenerateNumber()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate account number %w", err)
+	}
 	_, err = tx.Exec(ctx, `
-    	INSERT INTO accounts (id, user_id, type, status, created_at, updated_at)
-     	VALUES ($1, $2, 'user', 'active', $3, $4)
-	`, accountID, user.ID, now, now)
+    	INSERT INTO accounts (id, account_number ,user_id, type, status, created_at, updated_at)
+     	VALUES ($1, $2, $3, 'user', 'active', $4, $5)
+	`, accountID, accountNumber, user.ID, now, now)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create account: %w", err)
@@ -118,7 +122,7 @@ type AuthResponse struct {
 	User  *domain.User `json:"user"`
 }
 
-func (s *AuthServise) Login(ctx context.Context, input LoginInput) (*AuthResponse, error) {
+func (s *AuthServiсe) Login(ctx context.Context, input LoginInput) (*AuthResponse, error) {
 	phone := strings.ReplaceAll(input.Phone, " ", "")
 	phone = strings.ReplaceAll(phone, "-", "")
 

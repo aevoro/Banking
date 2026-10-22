@@ -7,12 +7,15 @@ import (
 	"math"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"banking/internal/repository/postgres"
 )
 
 var (
 	ErrCurrencyNotSupported = errors.New("currency conversion rate not found")
 	ErrInvalidAmount        = errors.New("amount must be greater than zero")
+	ErrSameCurrency         = errors.New("cannot exchange to the same currency")
 )
 
 type ExchangeService struct {
@@ -50,13 +53,7 @@ func (s *ExchangeService) Convert(ctx context.Context, req ConvertRequest) (*Con
 	}
 
 	if from == to {
-		return &ConvertResponse{
-			FromCurrency:    from,
-			ToCurrency:      to,
-			OriginalAmount:  req.Amount,
-			ConvertedAmount: req.Amount,
-			Rate:            1.0,
-		}, nil
+		return nil, ErrSameCurrency
 	}
 
 	rate, err := s.resolveRate(ctx, from, to)
@@ -73,6 +70,29 @@ func (s *ExchangeService) Convert(ctx context.Context, req ConvertRequest) (*Con
 		ConvertedAmount: convertedAmount,
 		Rate:            rate,
 	}, nil
+}
+
+func (s *ExchangeService) ExecuteExchange(ctx context.Context, userID uuid.UUID, req ConvertRequest) (*postgres.ExchangeResult, error) {
+	// 1. Рассчитываем курс и итоговую сумму
+	conv, err := s.Convert(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	accountID, err := s.rateRepo.GetAccountIDByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.rateRepo.ExecuteExchange(
+		ctx,
+		accountID,
+		conv.FromCurrency,
+		conv.ToCurrency,
+		conv.OriginalAmount,
+		conv.ConvertedAmount,
+		conv.Rate,
+	)
 }
 
 func (s *ExchangeService) resolveRate(ctx context.Context, from, to string) (float64, error) {

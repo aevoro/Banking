@@ -65,6 +65,10 @@ func main() {
 	exchangeService := service.NewExchangeService(exchangeRepo)
 	exchangeHandler := transportHttp.NewExchangeHandler(exchangeService)
 
+	transferRepo := postgres.NewTransferRepository(dbPool)
+	transferService := service.NewTransferService(transferRepo)
+	transferHandler := transportHttp.NewTransferHandler(transferService)
+
 	ratesWorker := worker.NewRatesSyncWorker(exchangeRepo, 6*time.Hour)
 	ratesWorker.Start(context.Background())
 
@@ -76,12 +80,13 @@ func main() {
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	// Маршруты аутентификации
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 
-	// Маршрут конвертера валют
+	mux.HandleFunc("/api/v1/transfers", transportHttp.AuthMiddleware(transferHandler.Transfer))
+
 	mux.HandleFunc("/api/v1/exchange/convert", exchangeHandler.Convert)
+	mux.HandleFunc("/api/v1/exchange", transportHttp.AuthMiddleware(exchangeHandler.Exchange))
 
 	srv := &http.Server{
 		Addr:         ":" + port,
