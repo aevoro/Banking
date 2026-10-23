@@ -1,6 +1,6 @@
 CREATE TYPE entry_direction AS ENUM (
-    'debit',  -- Списание средств со счета
-    'credit'  -- Зачисление средств на счет
+    'debit',
+    'credit'
 );
 
 CREATE TABLE entries (

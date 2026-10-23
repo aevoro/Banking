@@ -1,4 +1,9 @@
-# Системные файлы macOS / Windows / Linux
+# Документы аудита и планы доработок
+update.md
+
+# Hoppscotch / API Testing
+hoppscotch-collection.json
+hoppscotch-environment.json
 .DS_Store
 Thumbs.db
 
