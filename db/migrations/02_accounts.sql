@@ -12,6 +12,7 @@ CREATE TYPE account_status AS ENUM (
 
 CREATE TABLE accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_number VARCHAR(28) NOT NULL UNIQUE DEFAULT generate_account_number(),
     user_id UUID REFERENCES users(id) ON DELETE RESTRICT,
     type account_type NOT NULL DEFAULT 'user',
     status account_status NOT NULL DEFAULT 'active',
@@ -25,3 +26,4 @@ CREATE TABLE accounts (
 );
 
 CREATE INDEX idx_accounts_user_id ON accounts(user_id);
+CREATE UNIQUE INDEX idx_accounts_account_number ON accounts(account_number);
