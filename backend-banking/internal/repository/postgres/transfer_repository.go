@@ -54,7 +54,6 @@ func (r *TransferRepository) FindAccountByPhone(ctx context.Context, phone strin
 		LIMIT 1;
 	`
 	var acc AccountInfo
-	// Порядок колонок: a.id -> AccountID, a.user_id -> UserID
 	err := r.pool.QueryRow(ctx, query, phone).Scan(&acc.AccountID, &acc.UserID, &acc.Status)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

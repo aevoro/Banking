@@ -73,7 +73,6 @@ func (s *ExchangeService) Convert(ctx context.Context, req ConvertRequest) (*Con
 }
 
 func (s *ExchangeService) ExecuteExchange(ctx context.Context, userID uuid.UUID, req ConvertRequest) (*postgres.ExchangeResult, error) {
-	// 1. Рассчитываем курс и итоговую сумму
 	conv, err := s.Convert(ctx, req)
 	if err != nil {
 		return nil, err
