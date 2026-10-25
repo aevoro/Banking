@@ -90,7 +90,7 @@
 
 ```env
 SERVER_PORT=8080
-DATABASE_URL=postgres://ledger_user:ledger_password@localhost:5432/bank_ledger?sslmode=disable
+DATABASE_URL=postgres://
 REDIS_ADDR=localhost:6379
 KAFKA_BROKERS=localhost:29092
 LOG_LEVEL=debug
