@@ -61,7 +61,7 @@ func (r *OrganizationRepository) Create(ctx context.Context, p CreateOrgParams) 
 	}
 
 	orgID := uuid.New()
-	status := "verifed"
+	status := "verified"
 
 	_, err = tx.Exec(ctx, `
 			INSERT INTO organizations (id, user_id, unp, company_name, legal_address, contact_name, status)
@@ -71,7 +71,7 @@ func (r *OrganizationRepository) Create(ctx context.Context, p CreateOrgParams) 
 		return nil, fmt.Errorf("failed to insert organization: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, `UPDATE users SET customer_type = 'company' updated_at = NOW() WHERE id = $1`, p.UserID)
+	_, err = tx.Exec(ctx, `UPDATE users SET customer_type = 'company', updated_at = NOW() WHERE id = $1`, p.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update customer_type: %w", err)
 	}
@@ -97,7 +97,7 @@ func (r *OrganizationRepository) Create(ctx context.Context, p CreateOrgParams) 
 	}
 	for _, cur := range p.Currencies {
 		_, err := tx.Exec(ctx, `
-			INSERT INTO accound_balances (account_id, currency, balance)
+			INSERT INTO account_balances (account_id, currency, balance)
 			VALUES ($1, $2, 0)
 			ON CONFLICT (account_id, currency) DO NOTHING;
 			`, accountID, cur)

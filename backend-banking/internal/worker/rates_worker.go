@@ -57,6 +57,6 @@ func (w *RatesSyncWorker) sync(ctx context.Context) {
 		return
 	}
 
-	log.Printf("[Rates Worker] Exchange rates updated from NBRB (USD: %.4f, EUR: %.4f, RUB: %.5f)",
-		rates["USD"], rates["EUR"], rates["RUB"])
+	log.Printf("[Rates Worker] Exchange rates updated from NBRB (USD: %s, EUR: %s, RUB: %s)",
+		rates["USD"].StringFixed(4), rates["EUR"].StringFixed(4), rates["RUB"].StringFixed(5))
 }

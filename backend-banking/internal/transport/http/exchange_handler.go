@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 
 	"banking/internal/repository/postgres"
 	"banking/internal/service"
@@ -35,8 +35,8 @@ func (h *ExchangeHandler) Convert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	amount, err := strconv.ParseFloat(amountStr, 64)
-	if err != nil || amount <= 0 {
+	amount, err := decimal.NewFromString(amountStr)
+	if err != nil || amount.LessThanOrEqual(decimal.Zero) {
 		http.Error(w, "invalid or missing 'amount' query parameter", http.StatusBadRequest)
 		return
 	}

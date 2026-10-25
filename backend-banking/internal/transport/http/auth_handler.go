@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 )
 
 type AuthHandler struct {
-	authService service.AuthServiсe
+	authService service.AuthService
 }
 
-func NewAuthHandler(authServise *service.AuthServiсe) *AuthHandler {
+func NewAuthHandler(authServise *service.AuthService) *AuthHandler {
 	return &AuthHandler{authService: *authServise}
 }
 
@@ -55,6 +56,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req service.LoginInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if strings.TrimSpace(req.Phone) == "" || strings.TrimSpace(req.Password) == "" {
+		http.Error(w, "phone or password is required", http.StatusBadRequest)
 		return
 	}
 

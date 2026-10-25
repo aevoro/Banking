@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 
 	"banking/internal/repository/postgres"
 )
@@ -31,24 +31,24 @@ func NewExchangeService(rateRepo *postgres.ExchangeRateRepository) *ExchangeServ
 }
 
 type ConvertRequest struct {
-	FromCurrency string  `json:"from_currency"`
-	ToCurrency   string  `json:"to_currency"`
-	Amount       float64 `json:"amount"`
+	FromCurrency string          `json:"from_currency"`
+	ToCurrency   string          `json:"to_currency"`
+	Amount       decimal.Decimal `json:"amount"`
 }
 
 type ConvertResponse struct {
-	FromCurrency    string  `json:"from_currency"`
-	ToCurrency      string  `json:"to_currency"`
-	OriginalAmount  float64 `json:"original_amount"`
-	ConvertedAmount float64 `json:"converted_amount"`
-	Rate            float64 `json:"rate"`
+	FromCurrency    string          `json:"from_currency"`
+	ToCurrency      string          `json:"to_currency"`
+	OriginalAmount  decimal.Decimal `json:"original_amount"`
+	ConvertedAmount decimal.Decimal `json:"converted_amount"`
+	Rate            decimal.Decimal `json:"rate"`
 }
 
 func (s *ExchangeService) Convert(ctx context.Context, req ConvertRequest) (*ConvertResponse, error) {
 	from := strings.ToUpper(strings.TrimSpace(req.FromCurrency))
 	to := strings.ToUpper(strings.TrimSpace(req.ToCurrency))
 
-	if req.Amount <= 0 {
+	if req.Amount.LessThanOrEqual(decimal.Zero) {
 		return nil, ErrInvalidAmount
 	}
 
@@ -61,7 +61,7 @@ func (s *ExchangeService) Convert(ctx context.Context, req ConvertRequest) (*Con
 		return nil, err
 	}
 
-	convertedAmount := math.Round(req.Amount*rate*100) / 100
+	convertedAmount := req.Amount.Mul(rate).Round(2)
 
 	return &ConvertResponse{
 		FromCurrency:    from,
@@ -94,21 +94,21 @@ func (s *ExchangeService) ExecuteExchange(ctx context.Context, userID uuid.UUID,
 	)
 }
 
-func (s *ExchangeService) resolveRate(ctx context.Context, from, to string) (float64, error) {
+func (s *ExchangeService) resolveRate(ctx context.Context, from, to string) (decimal.Decimal, error) {
 	rate, err := s.rateRepo.GetLatestRate(ctx, from, to)
 	if err != nil {
-		return 0, err
+		return decimal.Zero, err
 	}
-	if rate > 0 {
+	if rate.GreaterThan(decimal.Zero) {
 		return rate, nil
 	}
 
 	reverseRate, err := s.rateRepo.GetLatestRate(ctx, to, from)
 	if err != nil {
-		return 0, err
+		return decimal.Zero, err
 	}
-	if reverseRate > 0 {
-		return 1.0 / reverseRate, nil
+	if reverseRate.GreaterThan(decimal.Zero) {
+		return decimal.NewFromInt(1).DivRound(reverseRate, 8), nil
 	}
 
 	if from != s.baseCurrency && to != s.baseCurrency {
@@ -116,9 +116,9 @@ func (s *ExchangeService) resolveRate(ctx context.Context, from, to string) (flo
 		rateBaseTo, err2 := s.resolveRate(ctx, s.baseCurrency, to)
 
 		if err1 == nil && err2 == nil {
-			return rateFromBase * rateBaseTo, nil
+			return rateFromBase.Mul(rateBaseTo).Round(8), nil
 		}
 	}
 
-	return 0, fmt.Errorf("%w: %s -> %s", ErrCurrencyNotSupported, from, to)
+	return decimal.Zero, fmt.Errorf("%w: %s -> %s", ErrCurrencyNotSupported, from, to)
 }

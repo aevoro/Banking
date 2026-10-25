@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 )
 
 type TransferRepository struct {
@@ -87,7 +88,7 @@ func (r *TransferRepository) ExecuteTransfer(
 	ctx context.Context,
 	senderAccountID, receiverAccountID uuid.UUID,
 	currency string,
-	amount float64,
+	amount decimal.Decimal,
 	description string,
 ) (*domain.TransferResult, error) {
 	tx, err := r.pool.Begin(ctx)
@@ -113,7 +114,7 @@ func (r *TransferRepository) ExecuteTransfer(
 	type balanceRow struct {
 		id        uuid.UUID
 		accountID uuid.UUID
-		balance   float64
+		balance   decimal.Decimal
 	}
 
 	var balances []balanceRow
@@ -140,7 +141,7 @@ func (r *TransferRepository) ExecuteTransfer(
 		return nil, domain.ErrBalanceNotFound
 	}
 
-	if senderBalance.balance < amount {
+	if senderBalance.balance.LessThan(amount) {
 		return nil, domain.ErrInsufficientFunds
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -24,7 +25,7 @@ func NewExchangeRateRepository(pool *pgxpool.Pool) *ExchangeRateRepository {
 	return &ExchangeRateRepository{pool: pool}
 }
 
-func (r *ExchangeRateRepository) GetLatestRate(ctx context.Context, from, to string) (float64, error) {
+func (r *ExchangeRateRepository) GetLatestRate(ctx context.Context, from, to string) (decimal.Decimal, error) {
 	query := `
 		SELECT rate
 		FROM exchange_rates
@@ -32,18 +33,18 @@ func (r *ExchangeRateRepository) GetLatestRate(ctx context.Context, from, to str
 		ORDER BY created_at DESC
 		LIMIT 1;
 	`
-	var rate float64
+	var rate decimal.Decimal
 	err := r.pool.QueryRow(ctx, query, from, to).Scan(&rate)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, nil
+			return decimal.Zero, nil
 		}
-		return 0, fmt.Errorf("failed to query exchange rate: %w", err)
+		return decimal.Zero, fmt.Errorf("failed to query exchange rate: %w", err)
 	}
 	return rate, nil
 }
 
-func (r *ExchangeRateRepository) SaveRates(ctx context.Context, rates map[string]float64, baseCurrency string) error {
+func (r *ExchangeRateRepository) SaveRates(ctx context.Context, rates map[string]decimal.Decimal, baseCurrency string) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin tx: %w", err)
@@ -58,7 +59,7 @@ func (r *ExchangeRateRepository) SaveRates(ctx context.Context, rates map[string
 	targetCurrencies := []string{"USD", "EUR", "RUB"}
 	for _, cur := range targetCurrencies {
 		rate, ok := rates[cur]
-		if !ok || rate <= 0 {
+		if !ok || rate.LessThanOrEqual(decimal.Zero) {
 			continue
 		}
 
@@ -84,20 +85,20 @@ func (r *ExchangeRateRepository) GetAccountIDByUserID(ctx context.Context, userI
 }
 
 type ExchangeResult struct {
-	TransactionID   uuid.UUID `json:"transaction_id"`
-	FromCurrency    string    `json:"from_currency"`
-	ToCurrency      string    `json:"to_currency"`
-	OriginalAmount  float64   `json:"original_amount"`
-	ConvertedAmount float64   `json:"converted_amount"`
-	Rate            float64   `json:"rate"`
-	Status          string    `json:"status"`
+	TransactionID   uuid.UUID       `json:"transaction_id"`
+	FromCurrency    string          `json:"from_currency"`
+	ToCurrency      string          `json:"to_currency"`
+	OriginalAmount  decimal.Decimal `json:"original_amount"`
+	ConvertedAmount decimal.Decimal `json:"converted_amount"`
+	Rate            decimal.Decimal `json:"rate"`
+	Status          string          `json:"status"`
 }
 
 func (r *ExchangeRateRepository) ExecuteExchange(
 	ctx context.Context,
 	accountID uuid.UUID,
 	fromCurrency, toCurrency string,
-	fromAmount, toAmount, rate float64,
+	fromAmount, toAmount, rate decimal.Decimal,
 ) (*ExchangeResult, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -121,7 +122,7 @@ func (r *ExchangeRateRepository) ExecuteExchange(
 	type balanceRow struct {
 		id       uuid.UUID
 		currency string
-		balance  float64
+		balance  decimal.Decimal
 	}
 
 	var balances []balanceRow
@@ -147,7 +148,7 @@ func (r *ExchangeRateRepository) ExecuteExchange(
 		return nil, ErrBalanceNotFound
 	}
 
-	if fromBal.balance < fromAmount {
+	if fromBal.balance.LessThan(fromAmount) {
 		return nil, ErrInsufficientFunds
 	}
 
@@ -170,7 +171,7 @@ func (r *ExchangeRateRepository) ExecuteExchange(
 	}
 
 	txID := uuid.New()
-	desc := fmt.Sprintf("Обмен валюты %s -> %s по курсу %.4f", fromCurrency, toCurrency, rate)
+	desc := fmt.Sprintf("Обмен валюты %s -> %s по курсу %s", fromCurrency, toCurrency, rate.StringFixed(4))
 	_, err = tx.Exec(ctx, `
 		INSERT INTO transactions (id, sender_account_id, receiver_account_id, amount, currency, type, status, description, created_at)
 		VALUES ($1, $2, $2, $3, $4, 'exchange', 'completed', $5, NOW());

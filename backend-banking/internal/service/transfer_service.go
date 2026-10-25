@@ -1,10 +1,13 @@
 package service
 
 import (
-	"banking/internal/domain"
-	"banking/internal/repository/postgres"
 	"context"
 	"strings"
+
+	"banking/internal/domain"
+	"banking/internal/repository/postgres"
+
+	"github.com/shopspring/decimal"
 )
 
 type TransferService struct {
@@ -16,7 +19,7 @@ func NewTransferService(transferRepo *postgres.TransferRepository) *TransferServ
 }
 
 func (s *TransferService) Transfer(ctx context.Context, params domain.TransferParams) (*domain.TransferResult, error) {
-	if params.Amount <= 0 {
+	if params.Amount.LessThanOrEqual(decimal.Zero) {
 		return nil, domain.ErrInvalidAmount
 	}
 

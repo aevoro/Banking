@@ -1,13 +1,15 @@
 package http
 
 import (
-	"banking/internal/domain"
-	"banking/internal/service"
 	"encoding/json"
 	"errors"
 	"net/http"
 
+	"banking/internal/domain"
+	"banking/internal/service"
+
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 type TransferHandler struct {
@@ -19,11 +21,11 @@ func NewTransferHandler(transferService *service.TransferService) *TransferHandl
 }
 
 type TransferRequest struct {
-	RecipientType string  `json:"recipient_type"`
-	Recipient     string  `json:"recipient"`
-	Currency      string  `json:"currency"`
-	Amount        float64 `json:"amount"`
-	Description   string  `json:"description"`
+	RecipientType string          `json:"recipient_type"`
+	Recipient     string          `json:"recipient"`
+	Currency      string          `json:"currency"`
+	Amount        decimal.Decimal `json:"amount"`
+	Description   string          `json:"description"`
 }
 
 func (h *TransferHandler) Transfer(w http.ResponseWriter, r *http.Request) {

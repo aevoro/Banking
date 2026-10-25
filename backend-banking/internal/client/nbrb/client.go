@@ -6,15 +6,17 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type NbrbRate struct {
-	CurID           int     `json:"Cur_ID"`
-	Date            string  `json:"Date"`
-	CurAbbreviation string  `json:"Cur_Abbreviation"`
-	CurScale        int     `json:"Cur_Scale"`
-	CurName         string  `json:"Cur_Name"`
-	CurOfficialRate float64 `json:"Cur_OfficialRate"`
+	CurID           int             `json:"Cur_ID"`
+	Date            string          `json:"Date"`
+	CurAbbreviation string          `json:"Cur_Abbreviation"`
+	CurScale        int             `json:"Cur_Scale"`
+	CurName         string          `json:"Cur_Name"`
+	CurOfficialRate decimal.Decimal `json:"Cur_OfficialRate"`
 }
 
 type Client struct {
@@ -29,7 +31,7 @@ func NewClient() *Client {
 	}
 }
 
-func (c *Client) FetchRates(ctx context.Context) (map[string]float64, error) {
+func (c *Client) FetchRates(ctx context.Context) (map[string]decimal.Decimal, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -50,10 +52,10 @@ func (c *Client) FetchRates(ctx context.Context) (map[string]float64, error) {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	result := make(map[string]float64)
+	result := make(map[string]decimal.Decimal)
 	for _, r := range rates {
 		if r.CurScale > 0 {
-			result[r.CurAbbreviation] = r.CurOfficialRate / float64(r.CurScale)
+			result[r.CurAbbreviation] = r.CurOfficialRate.Div(decimal.NewFromInt(int64(r.CurScale)))
 		}
 	}
 

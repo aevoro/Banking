@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -27,13 +28,13 @@ type TransferParams struct {
 	RecipientType TransferRecipientType
 	Recipient     string
 	Currency      string
-	Amount        float64
+	Amount        decimal.Decimal
 	Description   string
 }
 
 type TransferResult struct {
-	TransactionID uuid.UUID `json:"transaction_id"`
-	Currency      string    `json:"currency"`
-	Amount        float64   `json:"amount"`
-	Status        string    `json:"status"`
+	TransactionID uuid.UUID       `json:"transaction_id"`
+	Currency      string          `json:"currency"`
+	Amount        decimal.Decimal `json:"amount"`
+	Status        string          `json:"status"`
 }

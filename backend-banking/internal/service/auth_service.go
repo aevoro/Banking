@@ -29,19 +29,19 @@ type RegisterInput struct {
 	Currencies []string `json:"currencies"`
 }
 
-type AuthServiсe struct {
+type AuthService struct {
 	db       *pgxpool.Pool
 	userRepo *postgres.UserRepository
 }
 
-func NewAuthService(db *pgxpool.Pool, userRepo *postgres.UserRepository) *AuthServiсe {
-	return &AuthServiсe{
+func NewAuthService(db *pgxpool.Pool, userRepo *postgres.UserRepository) *AuthService {
+	return &AuthService{
 		db:       db,
 		userRepo: userRepo,
 	}
 }
 
-func (s *AuthServiсe) Register(ctx context.Context, input RegisterInput) (*domain.User, error) {
+func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*domain.User, error) {
 	phone := strings.ReplaceAll(input.Phone, " ", "")
 	phone = strings.ReplaceAll(phone, "-", "")
 	if !rbPhoneRegex.MatchString(phone) {
@@ -122,7 +122,7 @@ type AuthResponse struct {
 	User  *domain.User `json:"user"`
 }
 
-func (s *AuthServiсe) Login(ctx context.Context, input LoginInput) (*AuthResponse, error) {
+func (s *AuthService) Login(ctx context.Context, input LoginInput) (*AuthResponse, error) {
 	phone := strings.ReplaceAll(input.Phone, " ", "")
 	phone = strings.ReplaceAll(phone, "-", "")
 

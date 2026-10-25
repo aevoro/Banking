@@ -40,7 +40,7 @@ func (h *OrganizationHandler) RegisterOrganization(w http.ResponseWriter, r *htt
 	result, err := h.orgService.RegisterOrganization(r.Context(), userID, req)
 	if err != nil {
 		switch {
-		case errors.Is(err, validator.ErrInvalidUNPFormat), errors.Is(err, validator.ErrInvalidUNPCheckSum):
+		case errors.Is(err, validator.ErrInvalidUNPFormat), errors.Is(err, validator.ErrInvalidUNPCheckSum), errors.Is(err, service.ErrMissingRequiredFields):
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		case errors.Is(err, postgres.ErrUserAlreadyHasCompany):
 			http.Error(w, err.Error(), http.StatusConflict)
