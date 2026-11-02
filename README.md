@@ -136,7 +136,6 @@
 
 ### 1. Запуск фронтенда (Web Client)
 
-<<<<<<< HEAD
 Фронтенд может работать полностью автономно в **демо-режиме** без необходимости сразу запускать бэкенд:
 
 ```bash
@@ -150,15 +149,6 @@ npm run dev
 Для сборки продакшн-бандла:
 ```bash
 npm run build
-=======
-```env
-SERVER_PORT=8080
-DATABASE_URL=
-REDIS_ADDR=localhost:6379
-KAFKA_BROKERS=localhost:29092
-LOG_LEVEL=debug
-JWT_SECRET=your_super_secret_jwt_key_min_32_characters_long
->>>>>>> 7e90b7e97078f78505363404ddef7ca757763180
 ```
 
 ---
@@ -191,11 +181,11 @@ JWT_SECRET=your_super_secret_jwt_key_min_32_characters_long
 2. Настройте файл `backend-banking/.env`:
    ```env
    SERVER_PORT=8080
-   DATABASE_URL=postgres://ledger_user:ledger_pass@localhost:5432/bank_ledger?sslmode=disable
+   DATABASE_URL=postgres://<user>:<password>@localhost:5432/<dbname>?sslmode=disable
    REDIS_ADDR=localhost:6379
    KAFKA_BROKERS=localhost:29092
    LOG_LEVEL=debug
-   JWT_SECRET=your_super_secret_jwt_key_min_32_characters_long
+   JWT_SECRET=<your_jwt_secret_key_min_32_characters_long>
    ```
 3. Примените миграции из `db/migrations/` по порядку (от `01_` до `08_`).
 4. Запустите сервис:
