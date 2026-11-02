@@ -136,6 +136,7 @@
 
 ### 1. Запуск фронтенда (Web Client)
 
+<<<<<<< HEAD
 Фронтенд может работать полностью автономно в **демо-режиме** без необходимости сразу запускать бэкенд:
 
 ```bash
@@ -149,6 +150,15 @@ npm run dev
 Для сборки продакшн-бандла:
 ```bash
 npm run build
+=======
+```env
+SERVER_PORT=8080
+DATABASE_URL=
+REDIS_ADDR=localhost:6379
+KAFKA_BROKERS=localhost:29092
+LOG_LEVEL=debug
+JWT_SECRET=your_super_secret_jwt_key_min_32_characters_long
+>>>>>>> 7e90b7e97078f78505363404ddef7ca757763180
 ```
 
 ---
