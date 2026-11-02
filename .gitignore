@@ -1,23 +1,30 @@
-# Документы аудита и планы доработок
-update.md
-functional.md
-
-# Hoppscotch / API Testing
-hoppscotch-collection.json
-hoppscotch-environment.json
+# OS & System files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# IDE & редакторы
+# IDEs & Editors
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 *.sublime-project
 *.sublime-workspace
 
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Go / Backend binaries & artifacts
 **/bin/
-**/dist/
 *.exe
 *.exe~
 *.dll
@@ -25,19 +32,29 @@ Thumbs.db
 *.dylib
 *.test
 *.out
+backend-banking/bin/
+backend-banking/tmp/
 
-.env
-.env.*
-!.env.example
+# Frontend (Node, Vite, React)
+**/node_modules/
+**/dist/
+**/.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
+# Databases & Infrastructure persistent volumes
 postgres_data/
 pgdata/
 redisdata/
 kafkadata/
+data/
 
-**/node_modules/
-**/.next/
-**/.nuxt/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Внутренние документы аудита и коллекции тестирования
+update.md
+functional.md
+hoppscotch-collection.json
+hoppscotch-environment.json
