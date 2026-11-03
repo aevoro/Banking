@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"banking/internal/domain"
 
@@ -180,6 +181,17 @@ func (r *TransferRepository) ExecuteTransfer(
 	`, uuid.New(), transactionID, senderAccountID, currency, amount, uuid.New(), receiverAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create entries: %w", err)
+	}
+
+	eventPayload := fmt.Sprintf(`{"event":"money_transferred","transaction_id":"%s","sender_account_id":"%s","receiver_account_id":"%s","amount":%.2f,"currency":"%s","created_at":"%s"}`,
+		transactionID, senderAccountID, receiverAccountID, amount, currency, time.Now().UTC().Format(time.RFC3339))
+
+	_, err = tx.Exec(ctx, `
+			INSERT INTO outbox (id, topic, event_key, event_type, payload, status, created_at)
+			VALUES ($1, $2, $3, $4, $5::jsonb, 'pending', NOW());
+		`, uuid.New(), "banking.transfers", senderAccountID.String(), "money_transferred", eventPayload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert outbox event: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

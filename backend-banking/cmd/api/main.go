@@ -13,7 +13,9 @@ import (
 
 	"banking/internal/repository/postgres"
 	"banking/internal/service"
+	"banking/internal/storage/redis"
 	transportHttp "banking/internal/transport/http"
+	"banking/internal/transport/kafka"
 	"banking/internal/worker"
 )
 
@@ -37,6 +39,28 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	redisClient, err := redis.New(redisAddr, "")
+	if err != nil {
+		log.Fatalf("Failed to initialize Redis: %v", err)
+	}
+	defer redisClient.Close()
+	log.Println("Connected to Redis successfully")
+
+	kafkaBrokersStr := os.Getenv("KAFKA_BROKERS")
+	if kafkaBrokersStr == "" {
+		kafkaBrokersStr = "localhost:29092"
+	}
+	kafkaProducer := kafka.NewProducer([]string{kafkaBrokersStr})
+	defer kafkaProducer.Close()
+
+	outboxWorker := worker.NewOutboxRelayWorker(dbPool, kafkaProducer, 2*time.Second)
+	go outboxWorker.Start(ctx)
+
 	userRepo := postgres.NewUserRepository(dbPool)
 	transferRepo := postgres.NewTransferRepository(dbPool)
 	exchangeRepo := postgres.NewExchangeRateRepository(dbPool)
@@ -56,10 +80,11 @@ func main() {
 	transferHandler := transportHttp.NewTransferHandler(transferService)
 	exchangeHandler := transportHttp.NewExchangeHandler(exchangeService)
 	orgHandler := transportHttp.NewOrganizationHandler(orgService)
-	healthHandler := transportHttp.NewHealthHandler(dbPool)
+	healthHandler := transportHttp.NewHealthHandler(dbPool, redisClient)
 	accHandler := transportHttp.NewAccountHandler(accService)
 
 	router := transportHttp.NewRouter(transportHttp.RouterConfig{
+		RedisClient:         redisClient,
 		AuthHandler:         authHandler,
 		TransferHandler:     transferHandler,
 		ExchangeHandler:     exchangeHandler,

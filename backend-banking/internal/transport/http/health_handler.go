@@ -1,6 +1,7 @@
 package http
 
 import (
+	"banking/internal/storage/redis"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -10,11 +11,12 @@ import (
 )
 
 type HealthHandler struct {
-	pool *pgxpool.Pool
+	pool  *pgxpool.Pool
+	redis *redis.Client
 }
 
-func NewHealthHandler(pool *pgxpool.Pool) *HealthHandler {
-	return &HealthHandler{pool: pool}
+func NewHealthHandler(pool *pgxpool.Pool, redisClient *redis.Client) *HealthHandler {
+	return &HealthHandler{pool: pool, redis: redisClient}
 }
 
 type HealthResponse struct {
@@ -42,6 +44,13 @@ func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 		services["postgres"] = "up"
 	}
 
+	if err := h.redis.Ping(ctx); err != nil {
+		services["redis"] = "down: " + err.Error()
+		isHealthy = false
+	} else {
+		services["redis"] = "up"
+	}
+
 	resp := HealthResponse{
 		Status:    "ok",
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
@@ -52,9 +61,10 @@ func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 	if !isHealthy {
 		resp.Status = "degraded"
 		w.WriteHeader(http.StatusServiceUnavailable)
-	} else {
-		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(resp)
+		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
 }
